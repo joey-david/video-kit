@@ -359,8 +359,18 @@ class PaperScroll(Group):
         label = f"{kind}{m.group(2)}"
         for f in self._figs:
             if f["label"] == label:
-                r = f["rect"] | f["caption_rect"] if caption else f["rect"]
-                return self._r(f["page"], r, pad)
+                if caption:
+                    return self._r(f["page"], f["rect"] | f["caption_rect"], pad)
+                r, cap = pymupdf.Rect(f["rect"]), f["caption_rect"]
+                r = pymupdf.Rect(r.x0 - pad, r.y0 - pad, r.x1 + pad, r.y1 + pad)
+                fr = f["rect"]                            # never cut through the caption below / above
+                if (cap.y0 + cap.y1) / 2 > (fr.y0 + fr.y1) / 2:
+                    r.y1 = min(r.y1, cap.y0 - 0.5)
+                else:
+                    r.y0 = max(r.y0, cap.y1 + 0.5)
+                out = self._r(f["page"], r, 0.0)
+                out.is_figure = True
+                return out
         # fallback (wrapped figures, odd tables): grow from the caption over adjacent graphics / non-prose text
         name = {"fig": "Figure", "tab": "Table", "alg": "Algorithm"}[kind]
         for pno in self.pnos:

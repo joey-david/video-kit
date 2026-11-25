@@ -196,8 +196,10 @@ class WalkScene(PaperScene):
         r = region.pdf_rect
         pr = self.paper.doc[region.page - 1].rect
         m = 4.0                          # a little paper around the region, so nothing at its edge is clipped
-        region = self.paper.rect(region.page, max(0, r.x0 - m), max(0, r.y0 - m), min(pr.width, r.x1 + m),
-                                 min(pr.height, r.y1 + m))
+        # (sideways only for figures/tables found by p.figure, whose top/bottom already stop at the caption)
+        mv = 1.0 if getattr(region, "is_figure", False) else m
+        region = self.paper.rect(region.page, max(0, r.x0 - m), max(0, r.y0 - mv), min(pr.width, r.x1 + m),
+                                 min(pr.height, r.y1 + mv))
         self.stage("look", target=region, run_time=run_time)
         self.qa_event("figure", "look", 0.2)
 
@@ -299,8 +301,8 @@ class WalkScene(PaperScene):
                 crop.set_opacity(0)
                 self.add(crop)
             anims.append(Transform(crop, home))
-        self.play(*anims, run_time=run_time)
-        self.play(FadeOut(st["bg"]), run_time=run_time * 0.6)
+        anims.append(FadeOut(st["bg"], rate_func=lambda t: smooth(max(0.0, (t - 0.35) / 0.65))))
+        self.play(*anims, run_time=run_time)          # one move: drawings fade, figure flies home, page sharpens
         self.remove(*others, st["bg"], *([crop] if crop is not None else []))
         self.unfreeze()
         if to is not None:
@@ -312,7 +314,7 @@ class WalkScene(PaperScene):
         """The printed equation stays sharp while the page blurs behind it, dissolves into live LaTeX in place,
         and moves to `to`. Opens an 'over' stage: close with self.unstage()."""
         self.travel(region)
-        self.stage("over", target=region, run_time=0.7)
+        self.stage("over", target=region, run_time=0.6)
         crop = self.pulled
         eq = Tx(*parts, size=size, colors=colors)
         eq.match_height(crop).scale(0.9)
@@ -323,7 +325,7 @@ class WalkScene(PaperScene):
         if dest.width > FW - 1.2:
             dest.scale_to_fit_width(FW - 1.2)
         dest.move_to(to)
-        self.play(FadeOut(crop), FadeIn(eq), run_time=0.6)
+        self.play(FadeOut(crop), FadeIn(eq), run_time=0.45)
         self.remove(crop)
         self._stage["crop"] = None
         self.play(Transform(eq, dest), run_time=run_time)
