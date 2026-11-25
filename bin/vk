@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Entry point: video_kit/bin/vk <command> ...   (paper | cites | build | qa | say | new)
+KIT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export PYTHONPATH="$KIT${PYTHONPATH:+:$PYTHONPATH}" PYTHONWARNINGS=ignore TOKENIZERS_PARALLELISM=false
+exec "$KIT/.venv/bin/python" -m vk "$@"

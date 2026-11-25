@@ -1,0 +1,13 @@
+.venv/
+.cache/
+.locks/
+__pycache__/
+*.pyc
+.DS_Store
+legacy/
+demo/
+demo_scroll/
+mask.py
+videos/
+*.pdf
+*.mp4
